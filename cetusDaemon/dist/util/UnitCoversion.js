@@ -30,4 +30,6 @@ function convertTokibiBase(operand) {
     let base = kibiBase[operand.unit];
     return Number.parseInt(operand.value, 10) * base;
 }
+function noname() {
+}
 //# sourceMappingURL=UnitCoversion.js.map

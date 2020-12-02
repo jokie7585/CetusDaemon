@@ -18,7 +18,7 @@ var shedulerRouter;
     shedulerRouter.router.post('/dispatchEvent', function (req, res, next) {
         res.json(req.scheduler.dispatchEvent(req.body));
     });
-    shedulerRouter.router.post('/forceStart', function (req, res, next) {
+    shedulerRouter.router.get('/forceStart', function (req, res, next) {
         res.json(req.scheduler.dispatchJob());
     });
 })(shedulerRouter = exports.shedulerRouter || (exports.shedulerRouter = {}));

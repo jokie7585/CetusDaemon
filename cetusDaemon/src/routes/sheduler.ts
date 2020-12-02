@@ -17,7 +17,7 @@ export namespace shedulerRouter{
     res.json(req.scheduler.dispatchEvent(req.body));
   });
 
-  router.post('/forceStart', function(req: C_Request, res, next) {
+  router.get('/forceStart', function(req: C_Request, res, next) {
     res.json(req.scheduler.dispatchJob());
   });
 
