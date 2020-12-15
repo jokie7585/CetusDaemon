@@ -4,6 +4,7 @@ exports.appendProperty = exports.Initial = exports.Scheduler = void 0;
 const cetus_SystemConstant_1 = require("../../protocol/cetus_SystemConstant");
 const child_process_1 = require("child_process");
 const excuteJob_1 = require("../../util/excuteJob");
+const UnitCoversion_1 = require("../../util/UnitCoversion");
 let scheduler = undefined;
 let MaxGPUNumber = 10;
 class Scheduler {
@@ -166,7 +167,8 @@ class Worker {
     constructor(name) {
         this.gpu_Capacity = 0;
         this.gpu_Availible = 0;
-        this.memory_Capacity = 0;
+        this.cpu_Capacity = 0;
+        this.cpu_Availible = 0;
         this.jobSet = {}; // type = Job
         this.disabled = false;
         let info = child_process_1.spawnSync('kubectl', ['describe', 'node', name]);
@@ -184,21 +186,34 @@ class Worker {
         infoPair.forEach(el => {
             obj[el.key] = el.value;
         });
+        // console.log({getInfoObj:obj})
         // set gpu info
         if (obj['nvidia.com/gpu']) {
             this.gpu_Capacity = Number.parseInt(obj['nvidia.com/gpu'], 10);
             this.gpu_Availible = this.gpu_Capacity;
         }
         // set cpu info
+        if (obj['cpu']) {
+            this.cpu_Capacity = Number.parseInt(obj['cpu'], 10);
+            this.cpu_Availible = this.cpu_Capacity;
+        }
         // set mem info
         if (obj['memory']) {
-            this.memory_Capacity; // 
-            this.gpu_Availible = this.gpu_Capacity;
+            this.memory_Capacity = obj['memory'];
+            this.memory_Availible = this.memory_Capacity;
         }
     }
     acceptJob(job) {
-        if (this.gpu_Availible >= job.gpuRequest) {
+        console.log('in Node accept job');
+        console.log({ memoryCount: {
+                availible: this.memory_Availible,
+                req: job.MemoryRequest,
+                result: UnitCoversion_1.countMemory('sub', this.memory_Availible, job.MemoryRequest)
+            } });
+        if (this.gpu_Availible >= job.gpuRequest && this.cpu_Availible >= Number.parseInt(job.CpuRequest, 10) && this.IsMemoryOk(job.MemoryRequest)) {
             this.gpu_Availible -= job.gpuRequest;
+            this.cpu_Availible -= Number.parseInt(job.CpuRequest, 10);
+            this.memory_Availible = UnitCoversion_1.countMemory('sub', this.memory_Availible, job.MemoryRequest);
             this.jobSet[job.podName] = job;
             // exe
             excuteJob_1.exe(job.yamlPath);
@@ -211,6 +226,8 @@ class Worker {
         let info = this.jobSet[podName];
         // gpu 返して
         this.gpu_Availible += info.gpuRequest;
+        this.cpu_Availible += Number.parseInt(info.CpuRequest, 10);
+        this.memory_Availible = UnitCoversion_1.countMemory('add', this.memory_Availible, info.MemoryRequest);
         delete this.jobSet[podName];
     }
     disable() {
@@ -218,6 +235,16 @@ class Worker {
     }
     enable() {
         this.disabled = false;
+    }
+    //
+    IsMemoryOk(requestString) {
+        let memRemain = UnitCoversion_1.countMemory('sub', this.memory_Availible, requestString);
+        if (UnitCoversion_1.testMemoryPositive(memRemain)) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 }
 class JobQueue {

@@ -4,7 +4,7 @@ import {C_Request} from '../../util/Type'
 import {NextFunction, Request, Response} from 'express'
 import {spawnSync} from 'child_process'
 import {exe} from '../../util/excuteJob'
-import {countMemory} from '../../util/UnitCoversion'
+import {countMemory,testMemoryPositive} from '../../util/UnitCoversion'
 
 let scheduler: Scheduler = undefined;
 let MaxGPUNumber: number = 10;
@@ -209,7 +209,10 @@ export class Scheduler {
 class Worker {
     gpu_Capacity: number = 0;
     gpu_Availible: number = 0;
-    memory_Capacity: number = 0;
+    cpu_Capacity:number = 0
+    cpu_Availible:number = 0
+    memory_Capacity: string
+    memory_Availible: string
     jobSet: any = {}; // type = Job
     disabled: boolean = false;
 
@@ -234,6 +237,8 @@ class Worker {
             obj[el.key] = el.value;
         });
 
+        // console.log({getInfoObj:obj})
+
         // set gpu info
         if(obj['nvidia.com/gpu']) {
             this.gpu_Capacity = Number.parseInt(obj['nvidia.com/gpu'], 10);
@@ -241,17 +246,29 @@ class Worker {
         }
 
         // set cpu info
+        if(obj['cpu']) {
+            this.cpu_Capacity =  Number.parseInt(obj['cpu'], 10);
+            this.cpu_Availible = this.cpu_Capacity;
+        }
 
         // set mem info
         if(obj['memory']) {
-            this.memory_Capacity ; // 
-            this.gpu_Availible = this.gpu_Capacity;
+            this.memory_Capacity =  obj['memory'];
+            this.memory_Availible = this.memory_Capacity
         }
     }
 
     acceptJob(job: Job): boolean {
-        if(this.gpu_Availible >= job.gpuRequest) {
+        console.log('in Node accept job');
+        console.log({memoryCount: {
+            availible: this.memory_Availible,
+            req: job.MemoryRequest,
+            result: countMemory('sub', this.memory_Availible, job.MemoryRequest)
+        }})
+        if(this.gpu_Availible >= job.gpuRequest && this.cpu_Availible >= Number.parseInt(job.CpuRequest, 10) && this.IsMemoryOk(job.MemoryRequest)) {
             this.gpu_Availible -= job.gpuRequest;
+            this.cpu_Availible -= Number.parseInt(job.CpuRequest, 10)
+            this.memory_Availible = countMemory('sub', this.memory_Availible, job.MemoryRequest);
             this.jobSet[job.podName] = job;
             // exe
             exe(job.yamlPath);
@@ -266,6 +283,8 @@ class Worker {
         let info = this.jobSet[podName] as Job
         // gpu 返して
         this.gpu_Availible += info.gpuRequest;
+        this.cpu_Availible += Number.parseInt(info.CpuRequest, 10)
+        this.memory_Availible = countMemory('add', this.memory_Availible, info.MemoryRequest);
         delete this.jobSet[podName];
     }
 
@@ -277,7 +296,16 @@ class Worker {
         this.disabled = false;
     }
 
-
+    //
+    private IsMemoryOk(requestString:string): boolean {
+        let memRemain = countMemory('sub', this.memory_Availible, requestString);
+        if(testMemoryPositive(memRemain)) {
+            return true;
+        }
+        else {
+            return false
+        }
+    }
     
 }
 

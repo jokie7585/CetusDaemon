@@ -1,4 +1,5 @@
 const kibiBase: any =  {
+    ki: 1,
     mi : 1024,
     gi : 1024*1024
 }
@@ -32,11 +33,24 @@ function parseOperand(operandString: string): operand{
     } as operand
 }
 
+export function testMemoryPositive(operandString: string): boolean {
+    let pair = operandString.toLowerCase().match(findOperandPair)
+    if(Number.parseInt(pair[1], 10) >= 0) {
+        return true
+    }
+
+    return false;
+}
+
 function convertTokibiBase(operand: operand): number {
     let base = kibiBase[operand.unit] as  number;
+    console.log({convertTokibiBase:{
+        value: operand.value,
+        base: base
+    }})
     return Number.parseInt(operand.value, 10) * base;
 }
 
 function noname() {
-    
+
 }
