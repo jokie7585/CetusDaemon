@@ -27,8 +27,5 @@ COPY . .
 RUN ls
 RUN npm run setKubectl
 
-# compile TS
-RUN npm run prestart
-
 EXPOSE 3001
 CMD [ "npm", "run", "start" ]

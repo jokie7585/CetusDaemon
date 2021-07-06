@@ -9,11 +9,23 @@ const express_1 = __importDefault(require("express"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const morgan_1 = __importDefault(require("morgan"));
 const path_1 = __importDefault(require("path"));
+const child_process_1 = require("child_process");
 const index_1 = require("./routes/index");
 const administrator_1 = require("./routes/administrator");
 // middelware
 const cetusScheduler_1 = require("./middleware/sheduler/cetusScheduler");
+function test(position) {
+}
 var app = express_1.default();
+// test aks server
+console.log('test and pin aks nodes : ');
+try {
+    let result = child_process_1.execFileSync('kubectl', ['get', 'nodes'], { env: process.env });
+    console.log(result.toString());
+}
+catch (error) {
+    console.log('attach aks failed, contact penying tsai to solve it! ');
+}
 // view engine setup
 app.set('views', path_1.default.join(__dirname, 'views'));
 app.set('view engine', 'jade');
