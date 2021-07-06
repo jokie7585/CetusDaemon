@@ -13,7 +13,6 @@ const index_1 = require("./routes/index");
 const administrator_1 = require("./routes/administrator");
 // middelware
 const cetusScheduler_1 = require("./middleware/sheduler/cetusScheduler");
-// var usersRouter = require('./routes/users');
 var app = express_1.default();
 // view engine setup
 app.set('views', path_1.default.join(__dirname, 'views'));

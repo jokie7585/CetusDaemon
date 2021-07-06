@@ -4,6 +4,7 @@ import express from "express"
 import CookieParser from 'cookie-parser'
 import Logger from 'morgan'
 import ph from 'path'
+import {execFileSync} from 'child_process'
 
 import {indexRouter} from './routes/index'
 import {administratorRouter} from './routes/administrator'
@@ -11,7 +12,23 @@ import {administratorRouter} from './routes/administrator'
 import {Initial, appendProperty} from './middleware/sheduler/cetusScheduler'
 // var usersRouter = require('./routes/users');
 
+function test(position:string):void;
+function test(position:string):void {
+
+}
+
 var app = express();
+
+
+// test aks server
+console.log('test and pin aks nodes : ')
+try {
+  let result = execFileSync('kubectl', ['get','nodes'] ,{env:process.env})
+  console.log(result.toString())
+} catch (error) {
+  console.log('attach aks failed, contact penying tsai to solve it! ')
+}
+
 
 // view engine setup
 app.set('views', ph.join(__dirname, 'views'));
